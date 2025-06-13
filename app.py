@@ -35,7 +35,25 @@ def convert_file():
 
         # === DOCX to PDF ===
         elif original_ext == "docx" and to_format == "pdf":
-            pypandoc.convert_file(input_filename, 'pdf', outputfile=output_filename)
+            from docx import Document
+            from reportlab.lib.pagesizes import letter
+            from reportlab.pdfgen import canvas
+
+            doc = Document(input_filename)
+            c = canvas.Canvas(output_filename, pagesize=letter)
+            width, height = letter
+            y = height - 50
+
+            for para in doc.paragraphs:
+                text = para.text.strip()
+                if text:
+                    c.drawString(50, y, text)
+                    y -= 15
+                    if y < 50:
+                        c.showPage()
+                        y = height - 50
+
+            c.save()
 
         # === DOCX to TXT ===
         elif original_ext == "docx" and to_format == "txt":
