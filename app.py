@@ -11,7 +11,7 @@ from PIL import Image
 import pypandoc
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": ["https://docutool.xyz"]}})
 
 @app.route('/convert', methods=['POST'])
 def convert_file():
