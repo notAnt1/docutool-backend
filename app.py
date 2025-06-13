@@ -9,12 +9,21 @@ from docx import Document
 from reportlab.pdfgen import canvas
 from PIL import Image
 import pypandoc
+import subprocess
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": ["https://docutool.xyz"]}})
+CORS(app, origins=["https://docutool.xyz"], supports_credentials=True)
 
-@app.route('/convert', methods=['POST'])
+@app.route('/convert', methods=['POST', 'OPTIONS'])
 def convert_file():
+    if request.method == 'OPTIONS':
+        # CORS preflight support
+        response = app.make_default_options_response()
+        response.headers['Access-Control-Allow-Origin'] = 'https://docutool.xyz'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        return response
+
     if 'file' not in request.files or 'to_format' not in request.form:
         return 'Missing file or target format', 400
 
@@ -35,8 +44,6 @@ def convert_file():
 
         # === DOCX to PDF ===
         elif original_ext == "docx" and to_format == "pdf":
-            import subprocess
-
             subprocess.run([
                 "libreoffice",
                 "--headless",
@@ -44,7 +51,6 @@ def convert_file():
                 "--outdir", ".",
                 input_filename
             ], check=True)
-
             output_filename = input_filename.replace('.docx', '.pdf')
 
         # === DOCX to TXT ===
@@ -79,10 +85,13 @@ def convert_file():
         return str(e), 500
 
     finally:
-        if os.path.exists(input_filename):
-            os.remove(input_filename)
-        if os.path.exists(output_filename):
-            os.remove(output_filename)
+        try:
+            if os.path.exists(input_filename):
+                os.remove(input_filename)
+            if os.path.exists(output_filename):
+                os.remove(output_filename)
+        except Exception as cleanup_err:
+            print("Cleanup error:", cleanup_err)
 
 @app.route('/')
 def home():
