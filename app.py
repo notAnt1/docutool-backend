@@ -1,9 +1,11 @@
 from flask import Flask, request, send_file
+from flask_cors import CORS  # ✅ Add this
 import os
 from pdf2docx import Converter
 import uuid
 
 app = Flask(__name__)
+CORS(app)  # ✅ Enable CORS globally
 
 @app.route('/pdf-to-word', methods=['POST'])
 def convert_pdf_to_word():
@@ -25,7 +27,3 @@ def convert_pdf_to_word():
     os.remove(docx_filename)
 
     return response
-
-@app.route('/')
-def home():
-    return "DocuTool Backend Running"
