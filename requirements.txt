@@ -1,8 +1,7 @@
 Flask
+gunicorn
 flask-cors
 pdf2docx
 python-docx
 reportlab
-Pillow
-pypandoc
-gunicorn
+pillow

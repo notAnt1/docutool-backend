@@ -1,3 +1,4 @@
+# app.py
 from flask import Flask, request, send_file
 from flask_cors import CORS
 import os
@@ -8,7 +9,6 @@ from pdf2docx import Converter
 from docx import Document
 from reportlab.pdfgen import canvas
 from PIL import Image
-import pypandoc
 import subprocess
 
 app = Flask(__name__)
@@ -16,14 +16,6 @@ CORS(app, origins=["https://docutool.xyz"], supports_credentials=True)
 
 @app.route('/convert', methods=['POST', 'OPTIONS'])
 def convert_file():
-    if request.method == 'OPTIONS':
-        # CORS preflight support
-        response = app.make_default_options_response()
-        response.headers['Access-Control-Allow-Origin'] = 'https://docutool.xyz'
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
-        response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
-        return response
-
     if 'file' not in request.files or 'to_format' not in request.form:
         return 'Missing file or target format', 400
 
@@ -36,31 +28,23 @@ def convert_file():
     uploaded.save(input_filename)
 
     try:
-        # === PDF to DOCX ===
         if original_ext == "pdf" and to_format == "docx":
             cv = Converter(input_filename)
             cv.convert(output_filename)
             cv.close()
 
-        # === DOCX to PDF ===
         elif original_ext == "docx" and to_format == "pdf":
             subprocess.run([
-                "libreoffice",
-                "--headless",
-                "--convert-to", "pdf",
-                "--outdir", ".",
-                input_filename
+                "libreoffice", "--headless", "--convert-to", "pdf", "--outdir", ".", input_filename
             ], check=True)
             output_filename = input_filename.replace('.docx', '.pdf')
 
-        # === DOCX to TXT ===
         elif original_ext == "docx" and to_format == "txt":
             doc = Document(input_filename)
             with open(output_filename, 'w', encoding='utf-8') as f:
                 for para in doc.paragraphs:
                     f.write(para.text + "\n")
 
-        # === TXT to PDF ===
         elif original_ext == "txt" and to_format == "pdf":
             c = canvas.Canvas(output_filename)
             with open(input_filename, 'r', encoding='utf-8') as f:
@@ -71,7 +55,6 @@ def convert_file():
                     y -= 15
             c.save()
 
-        # === Image to PDF ===
         elif original_ext in ["jpg", "jpeg", "png"] and to_format == "pdf":
             img = Image.open(input_filename).convert("RGB")
             img.save(output_filename)
@@ -85,13 +68,10 @@ def convert_file():
         return str(e), 500
 
     finally:
-        try:
-            if os.path.exists(input_filename):
-                os.remove(input_filename)
-            if os.path.exists(output_filename):
-                os.remove(output_filename)
-        except Exception as cleanup_err:
-            print("Cleanup error:", cleanup_err)
+        if os.path.exists(input_filename):
+            os.remove(input_filename)
+        if os.path.exists(output_filename):
+            os.remove(output_filename)
 
 @app.route('/')
 def home():

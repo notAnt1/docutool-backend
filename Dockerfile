@@ -1,19 +1,28 @@
-# Use slim Python base image
 FROM python:3.9-slim
 
-# Install LibreOffice
+# Install dependencies
 RUN apt-get update && apt-get install -y \
     libreoffice \
+    poppler-utils \
+    python3-dev \
+    build-essential \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
     && apt-get clean
 
-# Set working directory
+# Create app directory
 WORKDIR /app
 
-# Copy app files
+# Copy files
 COPY . /app
 
-# Install Python dependencies
+# Install Python packages
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Start app with gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:10000", "app:app"]
+# Expose port
+EXPOSE 8000
+
+# Run app
+CMD ["gunicorn", "-b", "0.0.0.0:8000", "app:app"]
