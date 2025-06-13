@@ -35,25 +35,17 @@ def convert_file():
 
         # === DOCX to PDF ===
         elif original_ext == "docx" and to_format == "pdf":
-            from docx import Document
-            from reportlab.lib.pagesizes import letter
-            from reportlab.pdfgen import canvas
+            import subprocess
 
-            doc = Document(input_filename)
-            c = canvas.Canvas(output_filename, pagesize=letter)
-            width, height = letter
-            y = height - 50
+            subprocess.run([
+                "libreoffice",
+                "--headless",
+                "--convert-to", "pdf",
+                "--outdir", ".",
+                input_filename
+            ], check=True)
 
-            for para in doc.paragraphs:
-                text = para.text.strip()
-                if text:
-                    c.drawString(50, y, text)
-                    y -= 15
-                    if y < 50:
-                        c.showPage()
-                        y = height - 50
-
-            c.save()
+            output_filename = input_filename.replace('.docx', '.pdf')
 
         # === DOCX to TXT ===
         elif original_ext == "docx" and to_format == "txt":
